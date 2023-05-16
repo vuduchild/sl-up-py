@@ -24,27 +24,31 @@ class SmartLogParser:
                 return self.get_commit_lines_indices().index(i)
         raise ValueError("Could not find current checkout commit line index")
 
-    @staticmethod
-    def _remove_colors(string: str) -> str:
+    @classmethod
+    def _remove_colors(cls, string: str) -> str:
         # remove ANSI color codes from a
         # https://stackoverflow.com/questions/14693701/how-can-i-remove-the-ansi-escape-sequences-from-a-string-in-pythonq
         ansi_escape = re.compile(r"\x1B[@-_][0-?]*[ -/]*[@-~]")
         return ansi_escape.sub("", string)
 
-    @staticmethod
-    def is_commit_line(string: str) -> bool:
-        matcher = re.compile(r"^[\|\:\s]*[o\*]")
+    @classmethod
+    def is_commit_line(cls, string: str) -> bool:
+        matcher = re.compile(r"^[\│\s]*[o@]")
         return matcher.match(string) is not None
 
-    @staticmethod
-    def is_current_checkout(string: str) -> bool:
-        matcher = re.compile(r"^[\|\:\s]*\*")
+    @classmethod
+    def is_current_checkout(cls, string: str) -> bool:
+        matcher = re.compile(r"^[\│\s]*@")
         return matcher.match(string) is not None
 
-    @staticmethod
-    def remove_graphical_elements(string: str) -> str:
-        matcher = re.compile(r"^[\|\:\s]*[o\*]\s*")
-        return matcher.sub("", string)
+    @classmethod
+    def is_local_fork(cls, string: str) -> bool:
+        matcher = re.compile(r"^[\│\s]+[o@]")
+        return matcher.match(string) is not None
+
+    @classmethod
+    def is_in_trunk(cls, string: str) -> bool:
+        return cls.is_commit_line(string) and not cls.is_local_fork(string)
 
     @staticmethod
     def get_elements_from_log_line(
@@ -52,7 +56,39 @@ class SmartLogParser:
     ) -> dict[str, LogLineElement]:
         retval: dict[str, LogLineElement] = {}
         matcher = re.compile(
-            r"^[\|\:\s]*[o\*]\s*(?P<commit>[^\s]+)\s*(?P<author>[^\s]+)\s*(?:\((?P<branches>.*)\)\s*)?(?P<time>.*)$"
+            r"""
+            ^                               # start of line
+            [\│\:\s]*                       # whitespace or graph lines, 0 or more
+            [o@]                            # commit marker
+            \s+                             # whitespace, 1 or more
+            (?P<commit>[^\s]+)              # commit hash
+            \s+                             # whitespace, 1 or more
+            (?P<datetime>                   # date and time in words
+                (\b[^\s]+\b\s)+             # one or more words (day of week, or month and day)
+                (at)\s+                     # the word 'at'
+                [^\s]+                      # time
+            )
+            \s+                             # whitespace, 1 or more
+            (?P<author>[^\s]+)              # author username
+            \s*                             # whitespace, 0 or more
+            (?:(?P<pull_request>\#\d+))?     # optional pull request number
+            \s*                             # whitespace, 0 or more
+            (?P<status>(                    # optional PR status
+                Unreviewed
+                |
+                Review Required
+                |
+                Merged
+                |
+                Accepted
+                )
+            )?
+            \s*
+            (?P<status_emoji>(✓|✗))?        # optional PR status emoji)
+            (?P<bookmark>(remote)\/[^\s]+)? # optional bookmark
+            $                               # end of line
+            """,
+            re.VERBOSE,
         )
         matches = matcher.search(log_line)
         if matches:
@@ -65,18 +101,13 @@ class SmartLogParser:
                     )
         return retval
 
-    def get_commit_or_branch_name(self, log_line: str) -> str:
-        log_line = self._remove_colors(log_line).strip()
+    @classmethod
+    def get_commit(cls, log_line: str) -> str:
+        log_line = cls._remove_colors(log_line).strip()
 
-        elements = self.get_elements_from_log_line(log_line)
-
-        if elements.get("branches"):
-            branches = elements["branches"].text.split(",")
-            branches = [branch.strip() for branch in branches]
-            local_branches = [b for b in branches if not b.startswith("origin/")]
-            return local_branches[0] if local_branches else branches[0]
+        elements = cls.get_elements_from_log_line(log_line)
 
         if elements.get("commit"):
             return elements["commit"].text
 
-        raise ValueError("Could not find commit or branch name in log line")
+        raise ValueError("Could not find commit in log line")

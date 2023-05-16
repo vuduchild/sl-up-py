@@ -8,11 +8,11 @@ from log_parser import SmartLogParser
 
 
 def get_smartlog() -> str:
-    return subprocess.check_output(["git", "smartlog"]).decode()
+    return subprocess.check_output(["sl", "ssl"]).decode()
 
 
-def git_checkout(ref: str) -> None:
-    subprocess.check_call(["git", "checkout", ref])
+def sl_goto(ref: str) -> None:
+    subprocess.check_call(["sl", "goto", ref])
 
 
 def main(window: curses.window) -> None:
@@ -38,11 +38,11 @@ def main(window: curses.window) -> None:
                 current_line += 1
             elif key in [curses.KEY_ENTER, 10, 13]:
                 # Switch to the selected branch
-                ref = parser.get_commit_or_branch_name(
+                ref = parser.get_commit(
                     parser.smartlog[commit_lines_indices[current_line]]
                 )
                 if current_checkout != current_line:
-                    git_checkout(ref)
+                    sl_goto(ref)
                 break
             elif key == 27:  # Escape key
                 break
