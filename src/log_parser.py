@@ -1,5 +1,13 @@
+from __future__ import annotations
+
 import re
 from typing import NamedTuple
+
+
+class LogLine(NamedTuple):
+    text: str
+    in_trunk: bool
+    elements: dict[str, LogLineElement]
 
 
 class LogLineElement(NamedTuple):
@@ -8,7 +16,7 @@ class LogLineElement(NamedTuple):
 
 
 class SmartLogParser:
-    def __init__(self, smartlog: str):
+    def __init__(self, smartlog: str) -> None:
         self.smartlog: list[str] = self._remove_colors(smartlog).splitlines()
 
     def get_commit_lines_indices(self) -> list[int]:
@@ -51,7 +59,7 @@ class SmartLogParser:
         return cls.is_commit_line(string) and not cls.is_local_fork(string)
 
     @staticmethod
-    def get_elements_from_log_line(
+    def get_log_line_elements(
         log_line: str,
     ) -> dict[str, LogLineElement]:
         retval: dict[str, LogLineElement] = {}
@@ -102,10 +110,19 @@ class SmartLogParser:
         return retval
 
     @classmethod
-    def get_commit(cls, log_line: str) -> str:
-        log_line = cls._remove_colors(log_line).strip()
+    def get_log_line_obj(cls, log_line: str) -> LogLine:
+        log_line = cls._remove_colors(log_line).rstrip()
+        return LogLine(
+            text=log_line,
+            in_trunk=cls.is_in_trunk(log_line),
+            elements=cls.get_log_line_elements(log_line),
+        )
 
-        elements = cls.get_elements_from_log_line(log_line)
+    @classmethod
+    def get_commit(cls, log_line: str) -> str:
+        log_line = cls._remove_colors(log_line).rstrip()
+
+        elements = cls.get_log_line_elements(log_line)
 
         if elements.get("commit"):
             return elements["commit"].text

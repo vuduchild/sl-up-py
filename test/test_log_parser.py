@@ -64,7 +64,7 @@ class TestLogParser(unittest.TestCase):
                 f"line {self._smart_log_lines()[index]} is not in trunk",
             )
 
-    def test_get_elements_from_log_line(self) -> None:
+    def test_get_log_line_elements(self) -> None:
         expected = {
             "author": "roy.rothenberg",
             "commit": "7a8a6054a",
@@ -73,7 +73,7 @@ class TestLogParser(unittest.TestCase):
             "status": "Unreviewed",
             "status_emoji": "✗",
         }
-        actual = SmartLogParser.get_elements_from_log_line(self._smart_log_lines()[0])
+        actual = SmartLogParser.get_log_line_elements(self._smart_log_lines()[0])
         self.assertEqual(
             self._log_line_elements_simplified(actual),
             expected,
@@ -84,7 +84,7 @@ class TestLogParser(unittest.TestCase):
             "commit": "04b66ceaf",
             "datetime": "May 09 at 11:22",
         }
-        actual = SmartLogParser.get_elements_from_log_line(self._smart_log_lines()[3])
+        actual = SmartLogParser.get_log_line_elements(self._smart_log_lines()[3])
         self.assertEqual(
             self._log_line_elements_simplified(actual),
             expected,
@@ -96,7 +96,7 @@ class TestLogParser(unittest.TestCase):
             "datetime": "May 09 at 11:21",
             "bookmark": "remote/main",
         }
-        actual = SmartLogParser.get_elements_from_log_line(self._smart_log_lines()[9])
+        actual = SmartLogParser.get_log_line_elements(self._smart_log_lines()[9])
         self.assertEqual(
             self._log_line_elements_simplified(actual),
             expected,

@@ -8,7 +8,7 @@ from log_parser import SmartLogParser
 
 
 def get_smartlog() -> str:
-    return subprocess.check_output(["sl", "ssl"]).decode()
+    return subprocess.check_output(["sl", "ssl"]).decode().strip("\n")
 
 
 def sl_goto(ref: str) -> None:
