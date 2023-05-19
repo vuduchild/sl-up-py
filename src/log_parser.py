@@ -58,46 +58,58 @@ class SmartLogParser:
     def is_in_trunk(cls, string: str) -> bool:
         return cls.is_commit_line(string) and not cls.is_local_fork(string)
 
-    @staticmethod
+    @classmethod
     def get_log_line_elements(
+        cls,
         log_line: str,
     ) -> dict[str, LogLineElement]:
         retval: dict[str, LogLineElement] = {}
-        matcher = re.compile(
-            r"""
-            ^                               # start of line
-            [\│\:\s]*                       # whitespace or graph lines, 0 or more
-            [o@]                            # commit marker
-            \s+                             # whitespace, 1 or more
-            (?P<commit>[^\s]+)              # commit hash
-            \s+                             # whitespace, 1 or more
-            (?P<datetime>                   # date and time in words
-                (\b[^\s]+\b\s)+             # one or more words (day of week, or month and day)
-                (at)\s+                     # the word 'at'
-                [^\s]+                      # time
-            )
-            \s+                             # whitespace, 1 or more
-            (?P<author>[^\s]+)              # author username
-            \s*                             # whitespace, 0 or more
-            (?:(?P<pull_request>\#\d+))?     # optional pull request number
-            \s*                             # whitespace, 0 or more
-            (?P<status>(                    # optional PR status
-                Unreviewed
-                |
-                Review Required
-                |
-                Merged
-                |
-                Accepted
+        if cls.is_commit_line(log_line):
+            matcher = re.compile(
+                r"""
+                ^                               # start of line
+                [\│\:\s]*                       # whitespace or graph lines, 0 or more
+                [o@]                            # commit marker
+                \s+                             # whitespace, 1 or more
+                (?P<commit>[^\s]+)              # commit hash
+                \s+                             # whitespace, 1 or more
+                (?P<datetime>                   # date and time in words
+                    (\b[^\s]+\b\s)+             # one or more words (day of week, or month and day)
+                    (at)\s+                     # the word 'at'
+                    [^\s]+                      # time
                 )
-            )?
-            \s*
-            (?P<status_emoji>(✓|✗))?        # optional PR status emoji)
-            (?P<bookmark>(remote)\/[^\s]+)? # optional bookmark
-            $                               # end of line
-            """,
-            re.VERBOSE,
-        )
+                \s+                             # whitespace, 1 or more
+                (?P<author>[^\s]+)              # author username
+                \s*                             # whitespace, 0 or more
+                (?:(?P<pull_request>\#\d+))?     # optional pull request number
+                \s*                             # whitespace, 0 or more
+                (?P<status>(                    # optional PR status
+                    Unreviewed
+                    |
+                    Review Required
+                    |
+                    Merged
+                    |
+                    Accepted
+                    )
+                )?
+                \s*
+                (?P<status_emoji>(✓|✗))?        # optional PR status emoji)
+                (?P<bookmark>(remote)\/[^\s]+)? # optional bookmark
+                $                               # end of line
+                """,
+                re.VERBOSE,
+            )
+        else:
+            matcher = re.compile(
+                r"""
+                ^                               # start of line
+                [\│\s╭─╯├]+                     # whitespace or graph lines, 1 or more
+                (?P<message>(\b[^\s]+\b\s*)+)+  # one or more words
+                $                               # end of line
+                """,
+                re.VERBOSE,
+            )
         matches = matcher.search(log_line)
         if matches:
             group_dict = matches.groupdict()

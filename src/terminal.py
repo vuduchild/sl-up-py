@@ -14,6 +14,7 @@ class Colors(Enum):
     BLUE = 5
     MAGENTA = 6
     CYAN = 7
+    GRAY = 15
 
 
 def wrap(func: Callable[[_curses.window], None], /, *args: Any, **kwargs: Any) -> Any:
@@ -84,7 +85,7 @@ def draw_menu(window: _curses.window, current_line: int, smartlog: list[str]) ->
 
     # Draw the branch menu
     for i, log_line in enumerate(smartlog):
-        format_line(log_line, window, i + 1, i == current_line)
+        format_line(log_line, window, i, i == current_line)
     window.refresh()
 
 
@@ -99,39 +100,30 @@ def format_line(
     # First display the whole line
     render_text(log_line_obj.text, window, insert_line_index, 0)
 
-    # Colorize the commit hash
+    # current line gets special treatment
+    colors_per_element_when_selected = {
+        "author": Colors.MAGENTA,
+        "datetime": Colors.MAGENTA,
+        "message": Colors.MAGENTA,
+    }
+    if is_current_line:
+        for element_name, color in colors_per_element_when_selected.items():
+            if log_line_obj.elements.get(element_name):
+                render_text(
+                    log_line_obj.elements[element_name].text,
+                    window,
+                    insert_line_index,
+                    log_line_obj.elements[element_name].coordinates[0],
+                    color,
+                )
+
     if log_line_obj.elements.get("commit"):
         render_text(
             log_line_obj.elements["commit"].text,
             window,
             insert_line_index,
             log_line_obj.elements["commit"].coordinates[0],
-            Colors.YELLOW if log_line_obj.in_trunk else Colors.BLUE,
+            Colors.YELLOW
+            if log_line_obj.in_trunk
+            else Colors.GRAY,  # TODO: find actual color
         )
-
-    # if is_current_line:
-    #     color_screen_text(
-    #         log_line, window, insert_line_index, insert_row_index, Colors.MAGENTA
-    #     )
-    # else:
-    #     # first colorize the whole thing white
-    #     color_screen_text(log_line, window, insert_line_index, insert_row_index)
-
-    #     # colorize specific elements
-    #     elements = SmartLogParser.get_log_line_elements(log_line)
-    #     if elements.get("commit"):
-    #         color_screen_text(
-    #             elements["commit"].text,
-    #             window,
-    #             insert_line_index,
-    #             elements["commit"].coordinates[0] + 1,
-    #             Colors.YELLOW,
-    #         )
-    #     if elements.get("bookmark"):
-    #         color_screen_text(
-    #             elements["bookmark"].text,
-    #             window,
-    #             insert_line_index,
-    #             elements["bookmark"].coordinates[0] + 1,
-    #             Colors.GREEN,
-    #         )
