@@ -3,9 +3,8 @@ import subprocess
 
 
 class OperationTypes(Enum):
-    GET_SMARTLOG = 0
+    EXIT = 0
     GOTO_COMMIT = 1
-    EXIT = 2
 
 
 def get_smartlog() -> str:
