@@ -62,14 +62,15 @@ class TerminalRenderer:
                         self._draw_menu(commit_lines_indices[current_line])
 
                     case (_curses.KEY_ENTER | 10 | 13):
+                        if current_checkout == current_line:
+                            return OperationTypes.EXIT, ""
+
                         ref = self._log_parser.get_commit(
                             self._log_parser.smartlog[
                                 commit_lines_indices[current_line]
                             ]
                         )
-                        if current_checkout != current_line:
-                            return OperationTypes.GOTO_COMMIT, ref
-                        return OperationTypes.EXIT, ""
+                        return OperationTypes.GOTO_COMMIT, ref
 
                     case 27:  # Escape key
                         return OperationTypes.EXIT, ""
