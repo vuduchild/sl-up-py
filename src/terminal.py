@@ -1,8 +1,11 @@
 import curses as _curses
+import os
+
 from enum import Enum
-from typing import Any, Callable, Optional
+from typing import Optional, Tuple
 
 from log_parser import SmartLogParser
+from operations import OperationTypes
 
 
 class Colors(Enum):
@@ -17,16 +20,118 @@ class Colors(Enum):
     GRAY = 15
 
 
-def wrap(func: Callable[[_curses.window], None], /, *args: Any, **kwargs: Any) -> Any:
-    """Wrapper function that initializes curses and calls another function,
-    restoring normal keyboard/screen behavior on error.
-    The callable object 'func' is then passed the main window 'stdscr'
-    as its first argument, followed by any other arguments passed to
-    wrapper().
-    """
-    stdscr = None
-    try:
-        # Initialize curses
+class TerminalRenderer:
+    def __init__(self, log_parser: SmartLogParser) -> None:
+        self._log_parser = log_parser
+        self._window: Optional[_curses.window] = None
+
+    @property
+    def window(self) -> _curses.window:
+        if self._window is None:
+            self._window = self._init_window()
+        return self._window
+
+    def launch_interactive_tool(self) -> Tuple[OperationTypes, str]:
+        try:
+            return self.launch_interactive_tool_impl()
+        finally:
+            self._cleanup()
+
+    def launch_interactive_tool_impl(self) -> Tuple[OperationTypes, str]:
+        # These are the only lines we want to interact with
+        commit_lines_indices = self._log_parser.get_commit_lines_indices()
+        current_checkout = self._log_parser.current_checkout_commit_line_index()
+        # start the at the current checkout
+        current_line = current_checkout
+        # Draw the initial menu
+        self._draw_menu(commit_lines_indices[current_line])
+        while True:
+            try:
+                # Listen for user input
+                key = self.window.getch()
+                if key == _curses.KEY_UP and current_line > 0:
+                    current_line -= 1
+                elif (
+                    key == _curses.KEY_DOWN
+                    and current_line < len(commit_lines_indices) - 1
+                ):
+                    current_line += 1
+                elif key in [_curses.KEY_ENTER, 10, 13]:
+                    # Switch to the selected branch
+                    ref = self._log_parser.get_commit(
+                        self._log_parser.smartlog[commit_lines_indices[current_line]]
+                    )
+                    if current_checkout != current_line:
+                        return OperationTypes.GOTO_COMMIT, ref
+                    return OperationTypes.EXIT, ""
+                elif key == 27:  # Escape key
+                    return OperationTypes.EXIT, ""
+                # Redraw the menu with the new selection
+                self._draw_menu(commit_lines_indices[current_line])
+            except KeyboardInterrupt:
+                return OperationTypes.EXIT, ""
+
+    def _draw_menu(self, current_line: int) -> None:
+        self.window.clear()
+
+        # Draw the branch menu
+        for i, log_line in enumerate(self._log_parser.smartlog):
+            self._format_line(log_line, i, i == current_line)
+        self.window.refresh()
+
+    def _format_line(
+        self,
+        log_line: str,
+        insert_line_index: int,
+        is_current_line: bool = False,
+    ) -> None:
+        log_line_obj = SmartLogParser.get_log_line_obj(log_line)
+
+        # First display the whole line
+        self._render_text(log_line_obj.text, insert_line_index, 0)
+
+        # current line gets special treatment
+        colors_per_element_when_selected = {
+            "author": Colors.MAGENTA,
+            "datetime": Colors.MAGENTA,
+            "message": Colors.MAGENTA,
+        }
+        if is_current_line:
+            for element_name, color in colors_per_element_when_selected.items():
+                if log_line_obj.elements.get(element_name):
+                    self._render_text(
+                        log_line_obj.elements[element_name].text,
+                        insert_line_index,
+                        log_line_obj.elements[element_name].coordinates[0],
+                        color,
+                    )
+
+        if log_line_obj.elements.get("commit"):
+            self._render_text(
+                log_line_obj.elements["commit"].text,
+                insert_line_index,
+                log_line_obj.elements["commit"].coordinates[0],
+                Colors.YELLOW
+                if log_line_obj.in_trunk
+                else Colors.GRAY,  # TODO: find actual color
+            )
+
+    def _render_text(
+        self,
+        text: str,
+        insert_line_index: int,
+        insert_row_index: int = 1,
+        color: Optional[Colors] = None,
+    ) -> None:
+        params: list[int] = []
+        if color is not None:
+            params.append(_curses.color_pair(color.value))
+
+        self.window.addstr(insert_line_index, insert_row_index, text, *params)
+
+    @classmethod
+    def _init_window(cls) -> _curses.window:
+        os.environ.setdefault("ESCDELAY", "1")
         stdscr = _curses.initscr()
 
         # Turn off echoing of keys, and enter cbreak mode,
@@ -56,74 +161,12 @@ def wrap(func: Callable[[_curses.window], None], /, *args: Any, **kwargs: Any) -
         for i in range(0, _curses.COLORS):
             _curses.init_pair(i + 1, i, -1)
 
-        return func(stdscr, *args, **kwargs)
-    finally:
+        return stdscr
+
+    def _cleanup(self) -> None:
         # Set everything back to normal
-        if stdscr is not None:
-            stdscr.keypad(False)
+        if self._window is not None:
+            self._window.keypad(False)
             _curses.echo()
             _curses.nocbreak()
             _curses.endwin()
-
-
-def render_text(
-    text: str,
-    window: _curses.window,
-    insert_line_index: int,
-    insert_row_index: int = 1,
-    color: Optional[Colors] = None,
-) -> None:
-    params: list[int] = []
-    if color is not None:
-        params.append(_curses.color_pair(color.value))
-
-    window.addstr(insert_line_index, insert_row_index, text, *params)
-
-
-def draw_menu(window: _curses.window, current_line: int, smartlog: list[str]) -> None:
-    window.clear()
-
-    # Draw the branch menu
-    for i, log_line in enumerate(smartlog):
-        format_line(log_line, window, i, i == current_line)
-    window.refresh()
-
-
-def format_line(
-    log_line: str,
-    window: _curses.window,
-    insert_line_index: int,
-    is_current_line: bool = False,
-) -> None:
-    log_line_obj = SmartLogParser.get_log_line_obj(log_line)
-
-    # First display the whole line
-    render_text(log_line_obj.text, window, insert_line_index, 0)
-
-    # current line gets special treatment
-    colors_per_element_when_selected = {
-        "author": Colors.MAGENTA,
-        "datetime": Colors.MAGENTA,
-        "message": Colors.MAGENTA,
-    }
-    if is_current_line:
-        for element_name, color in colors_per_element_when_selected.items():
-            if log_line_obj.elements.get(element_name):
-                render_text(
-                    log_line_obj.elements[element_name].text,
-                    window,
-                    insert_line_index,
-                    log_line_obj.elements[element_name].coordinates[0],
-                    color,
-                )
-
-    if log_line_obj.elements.get("commit"):
-        render_text(
-            log_line_obj.elements["commit"].text,
-            window,
-            insert_line_index,
-            log_line_obj.elements["commit"].coordinates[0],
-            Colors.YELLOW
-            if log_line_obj.in_trunk
-            else Colors.GRAY,  # TODO: find actual color
-        )
