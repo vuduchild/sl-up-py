@@ -87,7 +87,7 @@ class TerminalRenderer:
 
         # Draw the branch menu
         for i, log_line in enumerate(self._log_parser.smartlog):
-            self._format_line(log_line, i, i == current_line)
+            self._format_line(log_line, i, i in (current_line, current_line + 1))
         self.window.refresh()
 
     def _format_line(
