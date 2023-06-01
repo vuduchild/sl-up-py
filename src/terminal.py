@@ -49,23 +49,27 @@ class TerminalRenderer:
             try:
                 # Listen for user input
                 key = self.window.getch()
-                if key == _curses.KEY_UP and current_line > 0:
-                    current_line -= 1
-                elif (
-                    key == _curses.KEY_DOWN
-                    and current_line < len(commit_lines_indices) - 1
-                ):
-                    current_line += 1
-                elif key in [_curses.KEY_ENTER, 10, 13]:
-                    # Switch to the selected branch
-                    ref = self._log_parser.get_commit(
-                        self._log_parser.smartlog[commit_lines_indices[current_line]]
-                    )
-                    if current_checkout != current_line:
-                        return OperationTypes.GOTO_COMMIT, ref
-                    return OperationTypes.EXIT, ""
-                elif key == 27:  # Escape key
-                    return OperationTypes.EXIT, ""
+
+                match key:
+                    case _curses.KEY_UP if current_line > 0:
+                        current_line -= 1
+                    case _curses.KEY_DOWN if current_line < len(
+                        commit_lines_indices
+                    ) - 1:
+                        current_line += 1
+                    case (_curses.KEY_ENTER | 10 | 13):
+                        ref = self._log_parser.get_commit(
+                            self._log_parser.smartlog[
+                                commit_lines_indices[current_line]
+                            ]
+                        )
+                        if current_checkout != current_line:
+                            return OperationTypes.GOTO_COMMIT, ref
+                        return OperationTypes.EXIT, ""
+                    case 27:  # Escape key
+                        return OperationTypes.EXIT, ""
+                    case _:
+                        pass
                 # Redraw the menu with the new selection
                 self._draw_menu(commit_lines_indices[current_line])
             except KeyboardInterrupt:

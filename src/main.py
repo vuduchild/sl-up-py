@@ -16,7 +16,7 @@ def main() -> None:
 
     match operation:
         case OperationTypes.EXIT:
-            return
+            return None
         case OperationTypes.GOTO_COMMIT:
             return sl_goto(commit)
     # we should never get here.
