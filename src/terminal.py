@@ -33,11 +33,11 @@ class TerminalRenderer:
 
     def launch_interactive_tool(self) -> Tuple[OperationTypes, str]:
         try:
-            return self.launch_interactive_tool_impl()
+            return self._launch_interactive_tool_impl()
         finally:
             self._cleanup()
 
-    def launch_interactive_tool_impl(self) -> Tuple[OperationTypes, str]:
+    def _launch_interactive_tool_impl(self) -> Tuple[OperationTypes, str]:
         # These are the only lines we want to interact with
         commit_lines_indices = self._log_parser.get_commit_lines_indices()
         current_checkout = self._log_parser.current_checkout_commit_line_index()
