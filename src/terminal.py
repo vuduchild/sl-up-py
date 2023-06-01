@@ -70,6 +70,7 @@ class TerminalRenderer:
                         return OperationTypes.EXIT, ""
                     case _:
                         pass
+
                 # Redraw the menu with the new selection
                 self._draw_menu(commit_lines_indices[current_line])
             except KeyboardInterrupt:
