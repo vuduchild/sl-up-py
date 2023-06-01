@@ -14,14 +14,14 @@ def main() -> None:
 
     operation, commit = renderer.launch_interactive_tool()
 
-    if operation == OperationTypes.EXIT:
-        return
-    if operation == OperationTypes.GOTO_COMMIT:
-        sl_goto(commit)
-    else:
-        # we should never get here.
-        # This call helps the type checker verify we've exhausted all possible cases
-        assert_never(operation)
+    match operation:
+        case OperationTypes.EXIT:
+            return
+        case OperationTypes.GOTO_COMMIT:
+            return sl_goto(commit)
+    # we should never get here.
+    # This call helps the type checker verify we've exhausted all possible cases
+    assert_never(operation)
 
 
 if __name__ == "__main__":
