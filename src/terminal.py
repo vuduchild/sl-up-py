@@ -4,7 +4,7 @@ import os
 from enum import Enum
 from typing import Optional, Tuple
 
-from log_parser import SmartLogParser
+from log_parser import SmartLogParser, SelectableEntry
 from operations import OperationTypes
 
 
@@ -113,7 +113,7 @@ class TerminalRenderer:
                     self._render_text(
                         log_line_obj.elements[element_name].text,
                         insert_line_index,
-                        log_line_obj.elements[element_name].coordinates[0],
+                        log_line_obj.elements[element_name].column_range[0],
                         color,
                     )
 
@@ -121,7 +121,7 @@ class TerminalRenderer:
             self._render_text(
                 log_line_obj.elements["commit"].text,
                 insert_line_index,
-                log_line_obj.elements["commit"].coordinates[0],
+                log_line_obj.elements["commit"].column_range[0],
                 Colors.YELLOW
                 if log_line_obj.in_trunk
                 else Colors.GRAY,  # TODO: find actual color

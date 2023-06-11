@@ -3,6 +3,46 @@ from __future__ import annotations
 import re
 from typing import NamedTuple
 
+COMMIT_LINE_REGEX = r"""
+^                               # start of line
+[\│\:\s]*                       # whitespace or graph lines, 0 or more
+[o@]                            # commit marker
+\s+                             # whitespace, 1 or more
+(?P<commit>[^\s]+)              # commit hash
+\s+                             # whitespace, 1 or more
+(?P<datetime>                   # date and time in words
+    (\b[^\s]+\b\s)+             # one or more words (day of week, or month and day)
+    (at)\s+                     # the word 'at'
+    [^\s]+                      # time
+)
+\s+                             # whitespace, 1 or more
+(?P<author>[^\s]+)              # author username
+\s*                             # whitespace, 0 or more
+(?:(?P<pull_request>\#\d+))?     # optional pull request number
+\s*                             # whitespace, 0 or more
+(?P<status>(                    # optional PR status
+    Unreviewed
+    |
+    Review Required
+    |
+    Merged
+    |
+    Accepted
+    )
+)?
+\s*
+(?P<status_emoji>(✓|✗))?        # optional PR status emoji)
+(?P<bookmark>(remote)\/[^\s]+)? # optional bookmark
+$                               # end of line
+"""
+
+MESSAGE_LINE_REGEX = r"""
+^                               # start of line
+[\│\s╭─╯├]+                     # whitespace or graph lines, 1 or more
+(?P<message>(\b[^\s]+\b\s*)+)+  # one or more words
+$                               # end of line
+"""
+
 
 class LogLine(NamedTuple):
     text: str
@@ -12,18 +52,57 @@ class LogLine(NamedTuple):
 
 class LogLineElement(NamedTuple):
     text: str
-    coordinates: tuple[int, int]
+    column_range: tuple[int, int]
+    line_number: int
+
+
+class SelectableEntry(NamedTuple):
+    raw_text: str
+    selected: bool
+    line_indices: list[int]
+    elements: dict[str, LogLineElement]
 
 
 class SmartLogParser:
     def __init__(self, smartlog: str) -> None:
         self.smartlog: list[str] = self._remove_colors(smartlog).splitlines()
 
+    def get_selectable_entries(self) -> list[SelectableEntry]:
+        lines = deque(enumerate(self.smartlog))
+        selectable_entries: list[SelectableEntry] = []
+        while lines:
+            commit_line_index, cur_line = lines.popleft()
+            elements = self.get_elements_from_commit_line(cur_line)
+            if not elements:
+                continue
+            line_indices = [commit_line_index]
+            raw_text = cur_line
+
+            # check if the next line is a message line and if so, consume it
+            message_line_index, message_line = lines[0]  # peek without consuming
+            message_line_elements = self.get_elements_from_message_line(message_line)
+            if message_line_elements:
+                lines.popleft()  # consume the message line
+                elements.update(message_line_elements)
+                line_indices.append(message_line_index)
+                raw_text += "\n" + message_line
+
+            selectable_entries.append(
+                SelectableEntry(
+                    raw_text=raw_text,
+                    selected=self.is_current_checkout(cur_line),
+                    line_indices=line_indices,
+                    elements=elements,
+                )
+            )
+
+        return selectable_entries
+
     def get_commit_lines_indices(self) -> list[int]:
         return [
-            i
-            for i in range(len(self.smartlog))
-            if self.is_commit_line(self.smartlog[i])
+            index
+            for index, line in enumerate(self.smartlog)
+            if self.is_commit_line(line)
         ]
 
     def current_checkout_commit_line_index(self) -> int:
@@ -63,61 +142,34 @@ class SmartLogParser:
         cls,
         log_line: str,
     ) -> dict[str, LogLineElement]:
+        return (
+            cls.get_elements_from_commit_line(log_line)
+            if cls.is_commit_line(log_line)
+            else cls.get_elements_from_message_line(log_line)
+        )
+
+    @classmethod
+    def get_elements_from_commit_line(cls, log_line: str) -> dict[str, LogLineElement]:
+        return cls.get_elements_from_log_line(log_line, COMMIT_LINE_REGEX)
+
+    @classmethod
+    def get_elements_from_message_line(cls, log_line: str) -> dict[str, LogLineElement]:
+        return cls.get_elements_from_log_line(log_line, MESSAGE_LINE_REGEX)
+
+    @classmethod
+    def get_elements_from_log_line(
+        cls, log_line: str, elements_regex: str
+    ) -> dict[str, LogLineElement]:
         retval: dict[str, LogLineElement] = {}
-        if cls.is_commit_line(log_line):
-            matcher = re.compile(
-                r"""
-                ^                               # start of line
-                [\│\:\s]*                       # whitespace or graph lines, 0 or more
-                [o@]                            # commit marker
-                \s+                             # whitespace, 1 or more
-                (?P<commit>[^\s]+)              # commit hash
-                \s+                             # whitespace, 1 or more
-                (?P<datetime>                   # date and time in words
-                    (\b[^\s]+\b\s)+             # one or more words (day of week, or month and day)
-                    (at)\s+                     # the word 'at'
-                    [^\s]+                      # time
-                )
-                \s+                             # whitespace, 1 or more
-                (?P<author>[^\s]+)              # author username
-                \s*                             # whitespace, 0 or more
-                (?:(?P<pull_request>\#\d+))?     # optional pull request number
-                \s*                             # whitespace, 0 or more
-                (?P<status>(                    # optional PR status
-                    Unreviewed
-                    |
-                    Review Required
-                    |
-                    Merged
-                    |
-                    Accepted
-                    )
-                )?
-                \s*
-                (?P<status_emoji>(✓|✗))?        # optional PR status emoji)
-                (?P<bookmark>(remote)\/[^\s]+)? # optional bookmark
-                $                               # end of line
-                """,
-                re.VERBOSE,
-            )
-        else:
-            matcher = re.compile(
-                r"""
-                ^                               # start of line
-                [\│\s╭─╯├]+                     # whitespace or graph lines, 1 or more
-                (?P<message>(\b[^\s]+\b\s*)+)+  # one or more words
-                $                               # end of line
-                """,
-                re.VERBOSE,
-            )
-        matches = matcher.search(log_line)
+        matches = re.compile(elements_regex, re.VERBOSE).search(log_line)
         if matches:
             group_dict = matches.groupdict()
             for key in group_dict.keys():
                 if group_dict[key]:
                     retval[key] = LogLineElement(
                         text=group_dict[key],
-                        coordinates=matches.span(key),
+                        column_range=matches.span(key),
+                        line_number=0 if key != "message" else 1,
                     )
         return retval
 
