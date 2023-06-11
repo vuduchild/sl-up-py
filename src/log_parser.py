@@ -1,7 +1,7 @@
 from __future__ import annotations
-from collections import deque
 
 import re
+from collections import deque
 from typing import NamedTuple
 
 COMMIT_LINE_REGEX = r"""
