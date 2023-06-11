@@ -17,7 +17,7 @@ class Colors(Enum):
     BLUE = 5
     MAGENTA = 6
     CYAN = 7
-    GRAY = 15
+    GRAY = 12
 
 
 class TerminalRenderer:
@@ -122,9 +122,15 @@ class TerminalRenderer:
                 log_line_obj.elements["commit"].text,
                 insert_line_index,
                 log_line_obj.elements["commit"].column_range[0],
-                Colors.YELLOW
-                if log_line_obj.in_trunk
-                else Colors.GRAY,  # TODO: find actual color
+                Colors.YELLOW if log_line_obj.in_trunk else Colors.GRAY,
+                bold=not log_line_obj.in_trunk,
+            )
+        if log_line_obj.elements.get("bookmark"):
+            self._render_text(
+                log_line_obj.elements["bookmark"].text,
+                insert_line_index,
+                log_line_obj.elements["bookmark"].column_range[0],
+                Colors.GREEN,
             )
 
     def _render_text(
@@ -133,10 +139,14 @@ class TerminalRenderer:
         insert_line_index: int,
         insert_row_index: int = 1,
         color: Optional[Colors] = None,
+        bold: bool = False,
     ) -> None:
         params: list[int] = []
         if color is not None:
-            params.append(_curses.color_pair(color.value))
+            color_val = _curses.color_pair(color.value)
+            if bold:
+                color_val |= _curses.A_BOLD
+            params.append(color_val)
 
         self.window.addstr(insert_line_index, insert_row_index, text, *params)
 
