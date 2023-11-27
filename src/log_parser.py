@@ -6,7 +6,7 @@ from typing import NamedTuple
 
 COMMIT_LINE_REGEX = r"""
 ^                               # start of line
-[\│\:\s]*                       # whitespace or graph lines, 0 or more
+[╷\│\:\s]*                       # whitespace or graph lines, 0 or more
 [o@]                            # commit marker
 \s+                             # whitespace, 1 or more
 (?P<commit>[^\s]+)              # commit hash
