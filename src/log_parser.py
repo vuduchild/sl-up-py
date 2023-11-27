@@ -12,9 +12,16 @@ COMMIT_LINE_REGEX = r"""
 (?P<commit>[^\s]+)              # commit hash
 \s+                             # whitespace, 1 or more
 (?P<datetime>                   # date and time in words
-    (\b[^\s]+\b\s)+             # one or more words (day of week, or month and day)
-    (at)\s+                     # the word 'at'
-    [^\s]+                      # time
+    (                           # Option 1 (example: May 09 at 11:16)
+        (\b[^\s]+\b\s)+         # one or more words (day of week, or month and day)
+        (at)\s+                 # the word 'at'
+        [^\s]+                  # time
+    )
+    |
+    (                           # Option 2 (example: 2 days ago)
+        (\b[^\s]+\b\s)+         # one or more words (day of week, or month and day)
+        (ago)                   # the word 'ago'
+    )
 )
 \s+                             # whitespace, 1 or more
 (?P<author>[^\s]+)              # author username
@@ -29,6 +36,8 @@ COMMIT_LINE_REGEX = r"""
     Merged
     |
     Accepted
+    |
+    Closed
     )
 )?
 \s*

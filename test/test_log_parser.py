@@ -8,18 +8,19 @@ SMART_LOG_OUTPUT_EXAMPLE_1 = """
   @  04b66ceaf  May 09 at 11:22  roy.rothenberg
 ╭─╯  commit 2
 │
+o  f4b4b7edb  5 minutes ago  remote/main
+│
 │ o  b693b742c  May 09 at 13:56  roy.rothenberg  #2 Merged ✓
 ├─╯  commit 2
 │
-o  b7e6cf068  May 09 at 11:21  roy.rothenberg  remote/main
+o  b7e6cf068  May 09 at 11:21  roy.rothenberg
 │  commit 1
 ~
-
 """
-COMMIT_LINE_INDICES_EXAMPLE_1 = [0, 3, 6, 9]
-NON_COMMIT_LINE_INDICES_EXAMPLE_1 = [1, 2, 4, 5, 7, 8, 10]
-LOCAL_FORK_COMMIT_LINE_INDICES_EXAMPLE_1 = [0, 3, 6]
-TRUNK_COMMIT_LINE_INDICES_EXAMPLE_1 = [9]
+COMMIT_LINE_INDICES_EXAMPLE_1 = [0, 3, 6, 8, 11]
+NON_COMMIT_LINE_INDICES_EXAMPLE_1 = [1, 2, 4, 5, 7, 9, 10, 12, 13]
+LOCAL_FORK_COMMIT_LINE_INDICES_EXAMPLE_1 = [0, 3, 8]
+TRUNK_COMMIT_LINE_INDICES_EXAMPLE_1 = [6, 11]
 CURRENT_CHECKOUT_COMMIT_LINE_INDEX_EXAMPLE_1 = 1
 
 
@@ -30,7 +31,8 @@ class TestLogParser(unittest.TestCase):
     def test_get_commit_lines_indices(self) -> None:
         parser = SmartLogParser(self._smart_log_output())
         self.assertEqual(
-            parser.get_commit_lines_indices(), COMMIT_LINE_INDICES_EXAMPLE_1
+            parser.get_commit_lines_indices(),
+            COMMIT_LINE_INDICES_EXAMPLE_1,
         )
 
     def test_current_checkout_commit_line_index(self) -> None:
@@ -91,12 +93,25 @@ class TestLogParser(unittest.TestCase):
         )
 
         expected = {
-            "author": "roy.rothenberg",
-            "commit": "b7e6cf068",
-            "datetime": "May 09 at 11:21",
-            "bookmark": "remote/main",
+            "commit": "f4b4b7edb",
+            "datetime": "5 minutes ago",
+            "author": "remote/main",
         }
-        actual = SmartLogParser.get_log_line_elements(self._smart_log_lines()[9])
+        actual = SmartLogParser.get_log_line_elements(self._smart_log_lines()[6])
+        self.assertEqual(
+            self._log_line_elements_simplified(actual),
+            expected,
+        )
+
+        expected = {
+            "author": "roy.rothenberg",
+            "commit": "b693b742c",
+            "datetime": "May 09 at 13:56",
+            "pull_request": "#2",
+            "status": "Merged",
+            "status_emoji": "✓",
+        }
+        actual = SmartLogParser.get_log_line_elements(self._smart_log_lines()[8])
         self.assertEqual(
             self._log_line_elements_simplified(actual),
             expected,
