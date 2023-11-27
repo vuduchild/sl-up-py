@@ -179,7 +179,7 @@ class TerminalRenderer:
         _curses.curs_set(0)
 
         _curses.use_default_colors()
-        for i in range(0, _curses.COLORS):
+        for i in range(0, _curses.COLORS - 1):
             _curses.init_pair(i + 1, i, -1)
 
         return stdscr
