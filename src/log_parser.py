@@ -145,7 +145,7 @@ class SmartLogParser:
 
     @classmethod
     def is_current_checkout(cls, string: str) -> bool:
-        matcher = re.compile(r"^{GRAPH_OR_WHITE_SPACE_REGEX}@")
+        matcher = re.compile(rf"^{GRAPH_OR_WHITE_SPACE_REGEX}@")
         return matcher.match(string) is not None
 
     @classmethod
