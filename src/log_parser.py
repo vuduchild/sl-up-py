@@ -24,7 +24,8 @@ COMMIT_LINE_REGEX = r"""
         (ago)                   # the word 'ago'
     )
 )
-\s+                             # whitespace, 1 or more
+
+(?:\s*|$)                       # whitespace or end of line
 (?P<author>[^\s]+)              # author username
 \s*                             # whitespace, 0 or more
 (?:(?P<pull_request>\#\d+))?     # optional pull request number
