@@ -8,16 +8,8 @@ class OperationTypes(Enum):
 
 
 def get_smartlog() -> str:
-    return (
-        subprocess.check_output(
-            ["/Users/royr/repos/personal/sapling/eden/scm/sl", "ssl"]
-        )
-        .decode()
-        .strip("\n")
-    )
+    return subprocess.check_output(["sl", "ssl"]).decode().strip("\n")
 
 
 def sl_goto(ref: str) -> None:
-    subprocess.check_call(
-        ["/Users/royr/repos/personal/sapling/eden/scm/sl", "goto", ref]
-    )
+    subprocess.check_call(["sl", "goto", ref])
