@@ -5,10 +5,13 @@ from collections import deque
 from pprint import pp
 from typing import NamedTuple
 
-COMMIT_LINE_REGEX = r"""
+GRAPH_OR_WHITE_SPACE_REGEX = r"[╷\│\:\s]*"
+COMMIT_MARKER_REGEX = r"[o@]"
+
+COMMIT_LINE_REGEX = rf"""
 ^                               # start of line
-[╷\│\:\s]*                      # whitespace or graph lines, 0 or more
-[o@]                            # commit marker
+{GRAPH_OR_WHITE_SPACE_REGEX}                      # whitespace or graph lines, 0 or more
+{COMMIT_MARKER_REGEX}                            # commit marker
 \s+                             # whitespace, 1 or more
 (?P<commit>[^\s]+)              # commit hash
 \s+                             # whitespace, 1 or more
@@ -137,17 +140,17 @@ class SmartLogParser:
 
     @classmethod
     def is_commit_line(cls, string: str) -> bool:
-        matcher = re.compile(r"^[╷\│\:\s]*[o@]")
+        matcher = re.compile(rf"^{GRAPH_OR_WHITE_SPACE_REGEX}{COMMIT_MARKER_REGEX}")
         return matcher.match(string) is not None
 
     @classmethod
     def is_current_checkout(cls, string: str) -> bool:
-        matcher = re.compile(r"^[\│\s]*@")
+        matcher = re.compile(r"^{GRAPH_OR_WHITE_SPACE_REGEX}@")
         return matcher.match(string) is not None
 
     @classmethod
     def is_local_fork(cls, string: str) -> bool:
-        matcher = re.compile(r"^[\│\s]+[o@]")
+        matcher = re.compile(rf"^[\│\s]+{COMMIT_MARKER_REGEX}")
         return matcher.match(string) is not None
 
     @classmethod
