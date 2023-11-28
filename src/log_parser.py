@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from collections import deque
+from pprint import pp
 from typing import NamedTuple
 
 COMMIT_LINE_REGEX = r"""
@@ -76,6 +77,11 @@ class SelectableEntry(NamedTuple):
 class SmartLogParser:
     def __init__(self, smartlog: str) -> None:
         self.smartlog: list[str] = self._remove_colors(smartlog).splitlines()
+
+    def dump(self) -> None:
+        print("\n".join(self.smartlog))
+        for line in self.smartlog:
+            pp(self.get_log_line_obj(line)._asdict())
 
     def get_selectable_entries(self) -> list[SelectableEntry]:
         lines = deque(enumerate(self.smartlog))
