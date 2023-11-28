@@ -9,15 +9,15 @@ from operations import OperationTypes
 
 
 class Colors(Enum):
-    WHITE = 0
-    BLACK = 1
-    RED = 2
-    GREEN = 3
-    YELLOW = 4
-    BLUE = 5
-    MAGENTA = 6
-    CYAN = 7
-    GRAY = 12
+    BLACK = 0
+    RED = 1
+    GREEN = 2
+    YELLOW = 3
+    BLUE = 4
+    MAGENTA = 5
+    CYAN = 6
+    WHITE = 7
+    GRAY = 11
 
 
 class TerminalRenderer:
@@ -143,7 +143,7 @@ class TerminalRenderer:
     ) -> None:
         params: list[int] = []
         if color is not None:
-            color_val = _curses.color_pair(color.value)
+            color_val = _curses.color_pair(color.value + 1)
             if bold:
                 color_val |= _curses.A_BOLD
             params.append(color_val)
