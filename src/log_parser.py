@@ -32,7 +32,7 @@ COMMIT_LINE_REGEX = r"""
 (?P<status>(                    # optional PR status
     Unreviewed
     |
-    Review Required
+    Review\ Required
     |
     Merged
     |
@@ -50,7 +50,7 @@ $                               # end of line
 MESSAGE_LINE_REGEX = r"""
 ^                               # start of line
 [╷\│\s╭─╯├]+                    # whitespace or graph lines, 1 or more
-(?P<message>(\b[^\s]+\b\s*)+)+  # one or more words
+(?P<message>([^\s]+\s*)+)+      # one or more words
 $                               # end of line
 """
 
@@ -136,7 +136,7 @@ class SmartLogParser:
 
     @classmethod
     def is_commit_line(cls, string: str) -> bool:
-        matcher = re.compile(r"^[\│\s]*[o@]")
+        matcher = re.compile(r"^[╷\│\:\s]*[o@]")
         return matcher.match(string) is not None
 
     @classmethod
