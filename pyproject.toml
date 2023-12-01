@@ -2,6 +2,7 @@
 name = "sl-up"
 version = "0.1.0"
 description = "Interactive Sapling SCM smartlog cli tool"
+license = "GPL-3.0-or-later"
 authors = ["Roy Rothenberg <royrothenberg@gmail.com>"]
 readme = "README.md"
 
