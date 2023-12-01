@@ -9,4 +9,4 @@ while [ -h "$SOURCE" ]; do
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
-/usr/bin/env python3 "$DIR/src/main.py" "$@"
+/usr/bin/env python3 "$DIR/sl_up/main.py" "$@"

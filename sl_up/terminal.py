@@ -4,8 +4,8 @@ import os
 from enum import Enum
 from typing import Optional, Tuple
 
-from log_parser import SmartLogParser
-from operations import OperationTypes
+from .log_parser import SmartLogParser
+from .operations import OperationTypes
 
 
 class Colors(Enum):

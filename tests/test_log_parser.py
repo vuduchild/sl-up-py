@@ -1,5 +1,5 @@
 import unittest
-from src.log_parser import SmartLogParser, LogLineElement
+from sl_up.log_parser import SmartLogParser, LogLineElement
 
 SMART_LOG_OUTPUT_EXAMPLE_1 = """
   o  7a8a6054a  May 09 at 11:16  roy.rothenberg  #3 Unreviewed ✗

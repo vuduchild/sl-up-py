@@ -1,14 +1,14 @@
 from typing import NoReturn
-from log_parser import SmartLogParser
-from terminal import TerminalRenderer
-from operations import OperationTypes, get_smartlog, sl_goto
+from .log_parser import SmartLogParser
+from .terminal import TerminalRenderer
+from .operations import OperationTypes, get_smartlog, sl_goto
 
 
 def assert_never(arg: NoReturn) -> NoReturn:
     assert False, f"Unhandled type: {type(arg).__name__}"
 
 
-def main() -> None:
+def run() -> None:
     log_parser = SmartLogParser(get_smartlog())
     renderer = TerminalRenderer(log_parser)
 
@@ -25,4 +25,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    run()
