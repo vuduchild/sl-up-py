@@ -5,6 +5,11 @@ This is my own personal implementation for a tool available internally at Meta. 
 
 
 ## Installation
+
 ```
+# using pip
+$ pip install sl-up
+
+# or with pipx
 $ pipx install git+https://github.com/vuduchild/sl-up.git
 ```
