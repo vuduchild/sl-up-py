@@ -1,4 +1,4 @@
-If you're looking for a Sapling compatible hg-sl-up, you might want to take a look at my [Rust implementation](https://github.com/vuduchild/sl-up) of this instead.
+If you're looking for a Sapling compatible hg-sl-up, you might want to take a look at my [Rust implementation](https://github.com/vuduchild/sl-up) of this instead. It's faster, cleaner and more complete.
 # sl-up-py
 An interactive TUI smartlog for [Sapling SCM](https://github.com/facebook/sapling), like git-sl-up but written in python3 and based on `curses`.
 
